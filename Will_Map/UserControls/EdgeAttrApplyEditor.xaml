@@ -1,0 +1,33 @@
+﻿<UserControl x:Class="Will_Map.UserControls.EdgeAttrApplyEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Will_Map.UserControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="400" Background="Wheat">
+  <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="24"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+
+            <RowDefinition/>
+            <RowDefinition Height="9*"/>
+
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal">
+            <Button x:Name="selAllBtn" Click="SelAllBtn_Click">全选</Button>
+            <Button x:Name="unselAllBtn" Click="UnselAllBtn_Click">全取消</Button>
+            <TextBlock Width="60"/>
+            <Button x:Name="getPartEdgeAttrBtn" Click="GetPartEdgeAttrBtn_Click" >获取</Button>
+        </StackPanel>
+        <local:EdgeAttrEditor x:Name="edgeEditor" Grid.Row="1" Grid.Column="1"></local:EdgeAttrEditor>
+       
+        <CheckBox x:Name="srcArrowCheck" HorizontalAlignment="Left" Margin="0,71.4,0,0" VerticalAlignment="Top" Grid.Row="1" />
+        <CheckBox x:Name="lineStyleCheck" HorizontalAlignment="Left" Margin="0,117.4,0,0" VerticalAlignment="Top" Grid.Row="1"/>
+        <CheckBox x:Name="tarArrowCheck" HorizontalAlignment="Left" Margin="0,162.2,0,0" VerticalAlignment="Top" Grid.Row="1"/>
+        <CheckBox x:Name="decSymbolCheck" HorizontalAlignment="Left" Margin="0,209.2,0,0" VerticalAlignment="Top" Grid.Row="1"/>
+    </Grid>
+</UserControl>

@@ -1,0 +1,80 @@
+﻿<Window x:Class="Will_Map.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Will_Map"
+        xmlns:av="http://schemas.xceed.com/wpf/xaml/avalondock"
+        xmlns:uc="clr-namespace:Will_Map.UserControls"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
+    <Grid x:Name="mainGrid">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Height="30" Orientation="Horizontal">
+                <ToggleButton Content="Node" x:Name="nodeBtn" Checked="NodeBtn_CheckChanged" Unchecked="NodeBtn_CheckChanged"/>
+                <ToggleButton Content="Edge" x:Name="edgeBtn"   Checked="EdgeBtn_CheckChanged"  Unchecked="EdgeBtn_CheckChanged"/>
+                <ToggleButton Content="Select" x:Name="selectBtn"   Checked="SelectBtn_CheckChanged"  Unchecked="SelectBtn_CheckChanged"/>
+                <ToggleButton Content="Apply" x:Name="applyBtn"  Checked="ApplyBtn_CheckChanged" Unchecked="ApplyBtn_CheckChanged" />
+
+                <TextBlock Width="50" />
+                <Button x:Name="saveBtn" Content="Save" Click="SaveBtn_Click"/>
+                <Button x:Name="loadBtn" Content="Load" Click="LoadBtn_Click"/>
+                <Button x:Name="saveAsBtn" Content="SaveAs" Click="SaveAsBtn_Click"/>
+                <Button x:Name="copyBtn" Content="Copy" Click="CopyBtn_Click"/>
+                <Button x:Name="pasteBtn" Content="Paste" Click="PasteBtn_Click"/>
+                <Menu >
+                    <MenuItem Height="30" Header="板"  >
+                        <MenuItem Header="属性" Click="MenuItem_attr_Click"></MenuItem>
+                        <MenuItem Header="默认属性" Click="MenuItem_defAttr_Click"/>
+                        <MenuItem Header="文档" Click="MenuItem_doc_Click"/>
+                    </MenuItem>
+                    <MenuItem Height="30" Header="视"  >
+                        <MenuItem Header="o点置中" Click="MenuItem_originCenter_Click"></MenuItem>
+                        <MenuItem Header="全图" Click="MenuItem_entierMap_Click"/>
+                        <MenuItem Header="100%比例" Click="MenuItem_originScale_Click"/>
+                    </MenuItem>
+                </Menu>
+            </StackPanel>
+
+            <av:DockingManager >
+                <av:LayoutRoot x:Name="layRoot">
+                    <av:LayoutPanel x:Name="mainDockingPanel">
+                        <av:LayoutAnchorablePane x:Name="leftAnchorPane" DockWidth="150" DockHeight="150">
+                            <av:LayoutAnchorable  x:Name="AttrPane"  Title="属性" CanClose="False" >
+
+                                <StackPanel x:Name="propertyPanel" Background="#FFD0D0D0" >
+                                    <Label Content="Label:" />
+                                    <TextBox x:Name="label_box" Height="23" TextWrapping="Wrap" LostFocus="Label_box_LostFocus" KeyDown="textBox_KeyDown"/>
+
+                                    <Grid>
+                                        <GroupBox x:Name="nodeAttrGroup" Header="Attr" Visibility="Hidden">
+                                            <StackPanel >
+                                                <Label Content="shape style:" Margin="0,0,0.2,0"/>
+                                                <ComboBox x:Name="shapeStyle_cmb" DisplayMemberPath="Enum_str" SelectedValuePath="Enum_value" SelectionChanged="ShapeStyle_cmb_SelectionChanged">
+
+                                                </ComboBox>
+
+                                            </StackPanel>
+                                        </GroupBox>
+
+                                        <uc:EdgeAttrEditor x:Name="edgeEditor" SrcArrowChanged="EdgeEditor_SrcArrowChanged" 
+                                            TarArrowChanged="EdgeEditor_TarArrowChanged" 
+                                            LineStyleChanged="EdgeEditor_LineStyleChanged" 
+                                            DecoratorChanged="EdgeEditor_DecoratorChanged">
+                                        </uc:EdgeAttrEditor>
+                                    </Grid>
+
+                                </StackPanel>
+                            </av:LayoutAnchorable>
+                        </av:LayoutAnchorablePane>
+                        <av:LayoutDocumentPane ShowHeader="False">
+                            <av:LayoutAnchorable>
+                                <local:IRxMap x:Name="ramp" MinWidth="50" MinHeight="50" />
+                            </av:LayoutAnchorable>
+                        </av:LayoutDocumentPane>
+                    </av:LayoutPanel>
+                </av:LayoutRoot>
+            </av:DockingManager>
+        </DockPanel>
+    </Grid>
+</Window>
