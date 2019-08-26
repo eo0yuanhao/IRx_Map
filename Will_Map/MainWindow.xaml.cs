@@ -26,338 +26,6 @@ namespace Will_Map
     /// <summary>
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
-    public class IRxMap:Canvas
-    {
-        //private Canvas _adjustPosCanvas;
-        public readonly Canvas MapCanvas = new Canvas();
-        public readonly Canvas DecoratorCanvas = new Canvas();
-        public readonly Dictionary<uint, IRxObject> objDict= new Dictionary<uint, IRxObject>();
-        public uint idmax = 0;
-        readonly Object idmax_Lock= new object();
-        IRxObject _objectOnHitTest;
-        public readonly HashSet<IRxObject> MarkedObjects = new HashSet<IRxObject>();
-        //public Dictionary<IRxObject,> DecoratorObjectDict
-
-
-        //protected override System.Windows.Size MeasureOverride(System.Windows.Size constraint)
-        //{
-        //    return new Size(200, 100);
-        //    base.MeasureOverride(constraint);
-        //    double width = base
-        //        .InternalChildren
-        //        .OfType<UIElement>()
-        //        .Where(i => i.GetValue(Canvas.LeftProperty) != null)
-        //        .Max(i => i.DesiredSize.Width + (double)i.GetValue(Canvas.LeftProperty));
-
-        //    if (Double.IsNaN(width))
-        //    {
-        //        width = 0;
-        //    }
-
-        //    double height = base
-        //        .InternalChildren
-        //        .OfType<UIElement>()
-        //        .Where(i => i.GetValue(Canvas.TopProperty) != null)
-        //        .Max(i => i.DesiredSize.Height + (double)i.GetValue(Canvas.TopProperty));
-
-        //    if (Double.IsNaN(height))
-        //    {
-        //        height = 0;
-        //    }
-
-        //    return new Size(width, height);
-        //}
-        public IRxMap()
-        {
-            //this .HorizontalAlignment = HorizontalAlignment.Stretch;
-            //this .VerticalAlignment = VerticalAlignment.Stretch;
-            this.Background = Brushes.Transparent;
-            //this.SizeChanged += IRxMap_SizeChanged;
-            //_adjustPosCanvas = new Canvas();
-            //this.Children.Add(_adjustPosCanvas);
-            //_adjustPosCanvas.Children.Add(MapCanvas);
-            this.Children.Add(MapCanvas);
-            Common.addCordinate(MapCanvas);
-            this.Children.Add(DecoratorCanvas);
-
-            //Common.addCordinate(this);
-        }
-
-        private void IRxMap_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            //_adjustPosCanvas.RenderTransform = new MatrixTransform(1, 0, 0, 1, e.NewSize.Width/2, e.NewSize.Height/2);
-        }
-
-        public Node addNode(string label,double px,double py)
-        {
-            var n = new Node(label,px,py);
-            return addNode(n);
-        }
-        Node addNode(Node n)
-        {
-            lock (idmax_Lock)
-            {
-                n.objId = idmax;
-                idmax++;
-            }
-            objDict.Add(n.objId, n);
-            MapCanvas.Children.Add(n.innerCanvas);
-            return n;
-        }
-        
-        public Edge addEdge(Node n1, Node n2)
-        {
-            var e=new Edge(n1, n2);
-            lock (idmax_Lock)
-            {
-                e.objId = idmax;
-                idmax++;
-            }
-            objDict.Add(e.objId, e);
-            e.objId = idmax;
-            MapCanvas.Children.Add(e.innerCanvas);
-            n1.OutEdges.Add(e);
-            n2.InEdges.Add(e);
-            return e;
-        }
-        public NodeBox addBox(string label,double px,double py)
-        {
-            NodeBox b = new NodeBox(label, px, py);
-            lock (idmax_Lock)
-            {
-                b.objId = idmax;
-                idmax++;
-            }
-            objDict.Add(b.objId, b);
-            MapCanvas.Children.Add(b.innerCanvas);
-            return b;
-        }
-        public void removeEdge(Edge e)
-        {
-            e.srcNode.OutEdges.Remove(e);
-            e.tarNode.InEdges.Remove(e);
-            removeIRxObject(e);
-        }
-        public void removeNode(Node n)
-        {
-            foreach( var e in n.InEdges)
-            {
-                e.srcNode.OutEdges.Remove(e);
-                removeIRxObject(e);
-            }          
-            foreach (var e in n.OutEdges)
-            {
-                e.tarNode.InEdges.Remove(e);
-                removeIRxObject(e);                
-            }                
-            removeIRxObject(n);
-        }
-        private void removeIRxObject (IRxObject obj)
-        {
-            objDict.Remove(obj.objId);
-            MapCanvas.Children.Remove(obj.FE);
-        }
-
-        public void update(ICollection<IRxObject> objs)
-        {
-            foreach(var obj in objs)
-            {
-                obj.invalidate();
-            }
-        }
-        //public void viewTransform(double scale,Point pos)
-        //{
-        //    viewTransform(scale, pos.X, pos.Y);
-        //}
-        public void viewTransform(double scale, double dx,double dy)
-        {
-            var mt = new MatrixTransform();
-            //var mat =  MapCanvas.RenderTransform.Value;
-            var mat = Matrix.Identity;
-            //            //
-            //mat.TranslatePrepend(pos.X, pos.Y);
-            //            mat.ScalePrepend(scale, scale);
-            //mat.TranslatePrepend(-pos.X, -pos.Y);
-            //            //
-            mat.ScaleAt(scale, scale, dx, dx);
-            //this.MapCanvas.RenderTransform =
-            mt.Matrix = mat;
-            mt.Matrix = new Matrix(scale, 0, 0, scale, dx, dy);
-            this.MapCanvas.RenderTransform = mt;   // new MatrixTransform(scale, 0, 0, scale, pos.X, pos.Y);
-            //this.MapCanvas.RenderTransformOrigin = pos;
-        }
-        public void viewportOnRect(Rect r)
-        {
-            var scale = Math.Min(ActualWidth / r.Width, ActualHeight / r.Height);
-            var mapCenter = new Point((r.Left + r.Right) / 2, (r.Top + r.Bottom) / 2);
-            viewTransform(scale, ActualWidth / 2 - mapCenter.X * scale, ActualHeight / 2 - mapCenter.Y * scale);
-        }
-        public IRxObject getPointObject(Point p)
-        {
-            _objectOnHitTest = null;
-            UpdateWithWpfHitObjectUnderMouseOnLocation(p, MyHitTestResultCallbackWithNoCallbacksToTheUser);
-            return _objectOnHitTest;
-        }
-        void UpdateWithWpfHitObjectUnderMouseOnLocation(Point pt, HitTestResultCallback hitTestResultCallback)
-        {
-            //_objectUnderMouseDetectionLocation = pt;
-            double MouseHitTolerance = 2;
-            // Expand the hit test area by creating a geometry centered on the hit test point.
-            var rect = new Rect(new Point(pt.X - MouseHitTolerance, pt.Y - MouseHitTolerance),
-                new Point(pt.X + MouseHitTolerance, pt.Y + MouseHitTolerance));
-            var expandedHitTestArea = new RectangleGeometry(rect);
-            // Set up a callback to receive the hit test result enumeration.
-            VisualTreeHelper.HitTest(MapCanvas, null,
-                hitTestResultCallback,
-                new GeometryHitTestParameters(expandedHitTestArea));
-        }
-        HitTestResultBehavior MyHitTestResultCallbackWithNoCallbacksToTheUser(HitTestResult result)
-        {
-            var frameworkElement = result.VisualHit as FrameworkElement;
-
-            if (frameworkElement == null)
-                return HitTestResultBehavior.Continue;
-            var innerCanvas = frameworkElement.Parent as Canvas;
-            if(innerCanvas!= null)
-            {
-                if (innerCanvas.Tag != null)
-                {
-                    var obj = innerCanvas.Tag as IRxObject;
-                    _objectOnHitTest = obj;
-                    return HitTestResultBehavior.Stop;
-                }
-            }
-
-            return HitTestResultBehavior.Continue;
-        }
-
-        public void ChangingMarkedObjectStatus(IRxObject obj)
-        {
-            if (obj.Marked)
-            {
-                //MarkedObjects.Add(obj);
-                if (obj.IRxType() == IRxObjectType.Node)
-                    decorateMarkedNode(obj as Node);
-                else if (obj.IRxType() == IRxObjectType.Edge)
-                    //obj.invalidate();
-                    decorateMarkedEdge(obj as Edge);
-                else // NodeBox
-                    decorateMarkedNodeBox(obj as NodeBox);
-            }
-            else
-            {
-                //MarkedObjects.Remove(obj);
-                undecorateObject(obj);
-            }
-        }
-        public HashSet<IRxObject> markedObjectDecorator = new HashSet<IRxObject>();
-
-        public void undecorateObject(IRxObject obj)
-        {
-            if (!markedObjectDecorator.Contains(obj))
-                return;
-            markedObjectDecorator.Remove(obj);
-            switch (obj.IRxType())
-            {
-                case IRxObjectType.Edge:
-                    break;
-                case IRxObjectType.Node:
-                    (obj as Node).borderStrokeThickness /= 2;
-                    break;
-                case IRxObjectType.NodeBox:
-                    (obj as NodeBox).borderStrokeThickness /= 2;
-                    break;
-            }
-
-            obj.invalidate();
-        }
-
-        private void decorateMarkedEdge(Edge edge)
-        {
-            if (markedObjectDecorator.Contains(edge))
-                return;
-            markedObjectDecorator.Add(edge);
-            //edge.lineStrokeThickness *= 2;
-            edge.invalidate();
-        }
-
-        private void decorateMarkedNode(Node node)
-        {
-            if (markedObjectDecorator.Contains(node))
-                return;
-            markedObjectDecorator.Add(node);
-            node.borderStrokeThickness *= 2;
-            node.invalidate();
-        }
-        private void decorateMarkedNodeBox(NodeBox box)
-        {
-            if (markedObjectDecorator.Contains(box))
-                return;
-            markedObjectDecorator.Add(box);
-            box.borderStrokeThickness *= 2;
-            box.invalidate();
-        }
-        internal void save(string fileName)
-        {
-            var nodeDataList = new List<NodeTransData>();
-            var edgeDataList = new List<EdgeTransData>();
-            foreach (var o in objDict)
-            {
-                var v = o.Value;
-                if (v.IRxType() == IRxObjectType.Node)
-                {
-                    var nt = new NodeTransData(v.Id(), v as Node);
-                    nodeDataList.Add(nt);
-                } else if (v.IRxType() == IRxObjectType.Edge)
-                {
-                    Edge e = v as Edge;
-                    edgeDataList.Add(new EdgeTransData(e.srcNode.Id(), e.tarNode.Id(), e));
-                }
-            }
-            var outstream = System.IO.File.Create(fileName);
-
-            var formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-            formatter.Serialize(outstream, nodeDataList);
-            formatter.Serialize(outstream, edgeDataList);
-            //Clipboard.SetData(DataFormats.Text, "haha");
-            outstream.Close();
-                //stm.Position = 0;
-        }
-        public void load(string filename)
-        {
-            MapCanvas.Children.Clear();
-            Common.addCordinate(MapCanvas);
-            objDict.Clear();
-            idmax = 0;
-
-            //var nodeDataList = new List<NodeTransData>();
-            //var edgeDataList = new List<EdgeTransData>();
-            var file = System.IO.File.OpenRead(filename);
-            var formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-            var nodeDataList = formatter.Deserialize(file) as List<NodeTransData>;
-            var edgeDataList = formatter.Deserialize(file) as List<EdgeTransData>;
-            //Clipboard.SetData(DataFormats.Text, "haha");
-            file.Close();
-            var old2new = new Dictionary<uint, uint>();
-            foreach (var o in nodeDataList)
-            {
-                var n = addNode(o.LabelText, o.Center.X, o.Center.Y);
-                n.shape = o.Shape;
-                old2new[o.tempid] = n.objId;
-                n.invalidate();
-            }
-            foreach(var o in edgeDataList)
-            {
-                var e = addEdge(objDict[old2new[o.SrcTempId]] as Node, objDict[ old2new[o.TarTempId]] as Node);
-                e.underlying = o.underlyingPolyline;
-                e.srcArrowStyle = o.srcArrowhead;
-                e.tarArrowStyle = o.tarArrowhead;
-                e.invalidate();
-            }
-        }
-    }
-
-
 
 
 
@@ -619,6 +287,8 @@ namespace Will_Map
                     _mouseDownPosL = e.GetPosition(ramp.MapCanvas);
                     _pressingL = true;
                     _mouseDownTouchedObject = ramp.getPointObject(e.GetPosition(ramp.MapCanvas));
+                    if(_mouseDownTouchedObject?.IRxType() == IRxObjectType.Node)
+                        _mouseDownTouchedNode = _mouseDownTouchedObject as Node;
                 }
                 else if (e.ChangedButton == MouseButton.Right)
                 {
@@ -729,14 +399,20 @@ namespace Will_Map
                     var _mouseUpTouchedNode = ramp.getPointObject(evt.GetPosition(ramp.MapCanvas)) as Node;
                     if (_mouseUpTouchedNode != null)
                     {
-                        ramp.addEdge(_mouseDownTouchedNode, _mouseUpTouchedNode).invalidate();
+                        if(_mouseDownTouchedNode  == _mouseUpTouchedNode)
+                        {
+                            var edge = ramp.addEdge(_mouseDownTouchedNode, _mouseDownTouchedNode);
+                            edge.underlying = CreateSelfEdgeUnderlyingPolyline(edge);
+                            edge.invalidate();
+                        }else
+                            ramp.addEdge(_mouseDownTouchedNode, _mouseUpTouchedNode).invalidate();
                     }
+
+                    //clean tempary edge decorate
                     if (ramp.DecoratorCanvas.Children.Contains(_decorateFE.addEdge_traceLine))
                     {
                         ramp.DecoratorCanvas.Children.Remove(_decorateFE.addEdge_traceLine);
-
                     }
-                        
                     if (ramp.DecoratorCanvas.Children.Contains(_decorateFE.redCapturePoint))
                         ramp.DecoratorCanvas.Children.Remove(_decorateFE.redCapturePoint);
                 }
@@ -815,6 +491,21 @@ namespace Will_Map
                     RaizeMarkingObjects();
 
                 }
+                else
+                {//处理拖动Node到NodeBox 内部的行为
+                    if(Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                    {
+                        var obj = ramp.getPointObject(e.GetPosition(ramp.MapCanvas), new HashSet<IRxObject>(new IRxObject[] {_mouseDownTouchedNode }));
+                        if(obj.IRxType()== IRxObjectType.NodeBox)
+                        {
+                            var box = obj as NodeBox;
+                            foreach( Node n in ramp.MarkedObjects)
+                            {
+                                n.Parent = box;
+                            }
+                        }
+                    }
+                }
 
                 _pressingL = false;
                 _objectDragging = false;
@@ -840,10 +531,20 @@ namespace Will_Map
                     }
                     else
                     {
-                        foreach (Node n in ramp.MarkedObjects)
+                        if (ramp.MarkedObjects.Count() == 1)
                         {
-
+                            Node node = ramp.MarkedObjects.First() as Node;
+                            if(node != null)
+                                ProcessRightClickOnSelectedNode(_mouseDownPosR, node);
                         }
+                        else
+                        {
+                            foreach (Node n in ramp.MarkedObjects)
+                            {
+
+                            }
+                        }
+
                     }
 
                 }
@@ -1126,6 +827,16 @@ namespace Will_Map
         {
             return CreateStraightUnderlyingPolyline(edge.srcNode, edge.tarNode);
         }
+        static SmoothedPolyline CreateSelfEdgeUnderlyingPolyline(Edge edge)
+        {
+            var n = edge.srcNode;
+            Func<Point, GPoint> g = p => new GPoint(p.X, p.Y);
+            var nc = g(n.Center);
+            n.invalidate();
+            var h = n.borderCurve.BoundingBox.Height / 2;
+            SmoothedPolyline sm = SmoothedPolyline.FromPoints(new[] { nc,nc + new GPoint(-h,-2*h),nc + new GPoint(h ,-2*h), nc });
+            return sm;
+        }
         static void DragEdgeAsStraightLine(Point delta, Edge edge)
         {
             Common.CreateSimpleEdgeCurveWithUnderlyingPolyline(edge);
@@ -1142,19 +853,33 @@ namespace Will_Map
 
             var edgeRemoveCouple = new Tuple<string, VoidDelegate>("Remove edge",
                                                                     () => ramp.removeEdge(edge));
-            var edgeModifyToStraightLine = new Tuple<string, VoidDelegate>("become to straight line",
-                                                () => { edge.underlying = CreateStraightUnderlyingPolyline(edge); edge.invalidate(); });
+            Tuple<string, VoidDelegate> edgeModifyToOriginLine = null;
+            if(edge.srcNode == edge.tarNode)
+            {
+                edgeModifyToOriginLine = new Tuple<string, VoidDelegate>("become to origin line",
+                                                             () => { edge.underlying = CreateSelfEdgeUnderlyingPolyline(edge); edge.invalidate(); });
+            }
+            else
+            {
+                edgeModifyToOriginLine = new Tuple<string, VoidDelegate>("become to straight line",
+                                                    () => { edge.underlying = CreateStraightUnderlyingPolyline(edge); edge.invalidate(); });
+            }
+
 
             if (cornerInfo.Item2 == PolylineCornerType.PreviousCornerForInsertion)
                 PopupMenus(
                     new Tuple<string, VoidDelegate>("Insert polyline corner",
                         () => { SmoothedPolylineHelper.InsertSite(cornerInfo.Item1, Common.AglPoint(_mouseDownPosR)); edge.invalidate(); }),
-                    edgeModifyToStraightLine, edgeRemoveCouple);
+                    edgeModifyToOriginLine, edgeRemoveCouple);
             else if (cornerInfo.Item2 == PolylineCornerType.CornerToDelete)
                 PopupMenus(
                     new Tuple<string, VoidDelegate>("Delete polyline corner",
                                                               () => { SmoothedPolylineHelper.DeleteSite(cornerInfo.Item1); edge.invalidate(); }),
-                    edgeModifyToStraightLine, edgeRemoveCouple);
+                    edgeModifyToOriginLine, edgeRemoveCouple);
+        }
+        public void ProcessRightClickOnSelectedNode(Point pos,Node n)
+        {
+            PopupMenus(new Tuple<string, VoidDelegate>("transform to box", () => { var box=ramp.addBox(n.Label, n.Center.X, n.Center.Y);box.invalidate(); ramp.removeNode(n); }));
         }
         public void PopupMenus(params Tuple<string, VoidDelegate>[] menuItems)
         {
@@ -1237,9 +962,18 @@ namespace Will_Map
 
                 NativeMethods.SetCursorPos((int)(np.X), (int)(np.Y));
             }
+            else if(e.Key == Key.D)
+            {
+                nodeBtn.IsChecked = true;
+            }
+            else if(e.Key == Key.E)
+            {
+                edgeBtn.IsChecked = true;
+            }
             else if (e.Key == Key.V)
             {
-                MessageBox.Show($"{ramp.ActualWidth} x {ramp.ActualHeight}");
+                //MessageBox.Show($"{ramp.ActualWidth} x {ramp.ActualHeight}");
+                selectBtn.IsChecked = true;
             }else if(e.Key == Key.S)
             {
                 ramp.Focus();
@@ -1531,6 +1265,8 @@ namespace Will_Map
 
         private void EdgeEditor_LineStyleChanged(object sender, EdgeAttrEditor.ValueChangedEventArgs<LineStyle> e)
         {
+            var edge = ramp.MarkedObjects.First() as Edge;
+            edge.lineStyle = edgeEditor.LineStyle;
         }
 
         private void EdgeEditor_DecoratorChanged(object sender, EdgeAttrEditor.ValueChangedEventArgs<string> e)

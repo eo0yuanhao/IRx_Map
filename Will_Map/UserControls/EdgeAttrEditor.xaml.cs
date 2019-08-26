@@ -181,7 +181,7 @@ namespace Will_Map.UserControls {
         public void SetAttr(Edge ea) {
             _srcArrowStyle = ea.srcArrowStyle;
             _tarArrowStyle = ea.tarArrowStyle;
-            //_lineStyle = ea.FirstStyle;
+            _lineStyle = ea.lineStyle;
             //_decSymbol = ea.DefinedDrawDelegateName;
             OnPropertyChanged("");
             
